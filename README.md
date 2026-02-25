@@ -10,6 +10,12 @@ This repository is dedicated to creating and collecting useful tools and scripts
 
 ## Scripts
 
-- **tag-and-pushdate.sh**: Lists image tags for a given container image reference that were created after a specified date. Useful for tracking and managing image versions in container registries. Requires `skopeo` and `jq`.
+- **k8s-cluster-health.sh**: Comprehensive cluster health check. Shows problematic pods, node status, resource usage, events, and a summary. Run it when you need a quick overview of a cluster's state.
+
+- **po-report-compute-usage.sh**: Reports pods where CPU/memory requests exceed actual usage. Helps identify over-provisioned workloads.
+
+- **tag-and-pushdate.sh**: Lists image tags created after a specified date. Requires `skopeo` and `jq`.
+
+- **brew.sh**: Homebrew bulk upgrade script. Upgrades a curated list of formulae (K8s tools, dev tools, security, etc.) and casks (GUI apps). Installs Homebrew if missing.
 
 More scripts will be added as the repository grows.
