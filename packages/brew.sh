@@ -32,20 +32,17 @@ formulae=(
   # Libraries
   libyaml melange mpfr ncurses nettle npth oniguruma openblas oras readline skopeo
   # Misc
-  apko git
+  apko git node
 )
 
 # ----------------------
 # Casks (GUI apps, SDKs, VMs)
 # ----------------------
 casks=(
-  gcloud-cli
-  google-cloud-sdk
   hashicorp-vagrant
   headlamp
   vagrant
   virtualbox@beta
-  virtualbox-beta
 )
 
 echo -e "\n--- Upgrading Homebrew formulae ---"

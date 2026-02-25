@@ -1,139 +1,353 @@
 # Kubernetes & Azure CLI Cheat Sheet
 
+---
+
+## Cluster Management
+
+**Get and set kubectl context:**
+
+```sh
+kubectl config get-contexts
+kubectl config use-context SITADayLkyDev
+```
+
+**Check available AKS versions:**
+
+```sh
+az aks get-versions --location eastus --output table
+```
+
+**Get credentials for AKS clusters:**
+
+```sh
+# Dev
+az aks get-credentials --subscription ed459897-1dc4-43c5-a753-7be586942a2d -n SITADayLkyDev -g SITADayLkyDev
+# Ops Staging
+az aks get-credentials --subscription 994744e4-70f2-4b40-8f9b-48ac40563208 -n OperationStaging -g SGS
+# Sales (fill in values)
+az aks get-credentials --subscription your-subscription-id -n your-cluster-name -g your-resource-group
+```
+
+**Update all deployments to current API version:**
+
+```sh
+kubectl get deployment --all-namespaces -o json | kubectl replace -f -
+```
+
+---
+
 ## Pod & Image Operations
 
-- **Get images from pods in a namespace:**
-  kubectl get pods -n smart-path-hub-2 -o=jsonpath="{range .items[*]}{.spec.containers[*].image}{'\n'}{end}"
+**Get images from pods in a namespace:**
 
-- **Get unique image count (sorted):**
-  kubectl get pods -n smart-path-hub-2 -o=jsonpath="{range .items[*]}{.spec.containers[*].image}{'\n'}{end}" | sort | uniq | wc -l
+```sh
+kubectl get pods -n smart-path-hub-2 -o=jsonpath="{range .items[*]}{.spec.containers[*].image}{'\n'}{end}"
+```
 
-- **Get unique images (ignore tag, all namespaces):**
-  kubectl get pods -A -o=jsonpath="{range .items[*]}{.spec.containers[*].image}{'\n'}{end}" | sort | awk -F: '{print $1}' | uniq
+**Get unique image count (sorted):**
 
-- **Get CPU requests for pods in a namespace:**
-  kubectl -n smart-path-hub-2 get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].resources.requests.cpu}{"\n"}{end}'
+```sh
+kubectl get pods -n smart-path-hub-2 -o=jsonpath="{range .items[*]}{.spec.containers[*].image}{'\n'}{end}" | sort | uniq | wc -l
+```
+
+**Get unique images (ignore tag, all namespaces):**
+
+```sh
+kubectl get pods -A -o=jsonpath="{range .items[*]}{.spec.containers[*].image}{'\n'}{end}" | sort | awk -F: '{print $1}' | uniq
+```
+
+**Get CPU requests for pods in a namespace:**
+
+```sh
+kubectl -n smart-path-hub-2 get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].resources.requests.cpu}{"\n"}{end}'
+```
+
+---
 
 ## Node Management
 
-- **Drain all agentpool nodes:**
-  kubectl get nodes -o custom-columns=:.metadata.name | grep agentpool | awk '{print $1}' | xargs -l1 kubectl drain --ignore-daemonsets --delete-emptydir-data
+**Drain and cordon all agentpool nodes:**
 
-- **Cordon all agentpool nodes:**
-  kubectl get nodes -o custom-columns=:.metadata.name | grep agentpool | awk '{print $1}' | xargs -l1 kubectl cordon
+```sh
+kubectl get nodes -o custom-columns=:.metadata.name | grep agentpool | awk '{print $1}' | xargs -l1 kubectl drain --ignore-daemonsets --delete-emptydir-data
+kubectl get nodes -o custom-columns=:.metadata.name | grep agentpool | awk '{print $1}' | xargs -l1 kubectl cordon
+```
 
-- **List node labels:**
-  kubectl label --list nodes node01
-  kubectl label --list $(kubectl get nodes -o name)
+**List and label nodes:**
 
-- **Label a node:**
-  kubectl label nodes node01 workload=production
+```sh
+kubectl label --list nodes node01
+kubectl label --list $(kubectl get nodes -o name)
+kubectl label nodes node01 workload=production
+```
+
+---
 
 ## Pod Listing & Logs
 
-- **List pods with images (custom columns):**
-  k get po -n sunnydale -o custom-columns=POD:.metadata.name,IMAGE:.spec.containers[*].image
+**List pods with images (custom columns):**
 
-- **List pods sorted by memory usage:**
-  kubectl top pods --all-namespaces --sort-by=memory
+```sh
+kubectl get po -n sunnydale -o custom-columns=POD:.metadata.name,IMAGE:.spec.containers[*].image
+```
 
-- **List all pods (all namespaces):**
-  kubectl get pods --all-namespaces
+**List pods sorted by memory usage:**
 
-- **Tail logs for a pod:**
-  kubectl logs -n default rabbitmq-0 --tail 5 -f
+```sh
+kubectl top pods --all-namespaces --sort-by=memory
+```
 
-- **Sort pods by creation time:**
-  kubectl get pods --sort-by=.metadata.creationTimestamp --all-namespaces
+**List all pods (all namespaces):**
 
-- **Delete all pods in a namespace:**
-  kubectl delete pod -n abc --all
+```sh
+kubectl get pods --all-namespaces
+```
+
+**Tail logs for a pod:**
+
+```sh
+kubectl logs -n default rabbitmq-0 --tail 5 -f
+```
+
+**Sort pods by creation time:**
+
+```sh
+kubectl get pods --sort-by=.metadata.creationTimestamp --all-namespaces
+```
+
+**Delete all pods in a namespace:**
+
+```sh
+kubectl delete pod -n abc --all
+```
+
+---
 
 ## RabbitMQ (RMQ)
 
-- **Port-forward RMQ service:**
-  kubectl port-forward --namespace default service/rabbitmq 15672
+**Port-forward RMQ service:**
 
-- **Logs for RMQ pod:**
-  kubectl logs rabbitmq-2 -n default
+```sh
+kubectl port-forward --namespace default service/rabbitmq 15672
+```
 
-- **Open bash in RMQ pod:**
-  kubectl exec -it rabbitmq-0 -n default -- bash
+**Logs for RMQ pod:**
 
-- **Shutdown RMQ node:**
-  rabbitmqctl --node rabbitmq-0 shutdown
-  rabbitmqctl --node rabbitmq-1 shutdown
+```sh
+kubectl logs rabbitmq-2 -n default
+```
 
-- **Check RMQ node status:**
-  rabbitmqctl status | grep node
+**Open bash in RMQ pod:**
 
-- **RMQ health check:**
-  rabbitmqctl node_health_check
+```sh
+kubectl exec -it rabbitmq-0 -n default -- bash
+```
 
-- **RMQ log level help:**
-  [https://www.rabbitmq.com/troubleshooting.html#logging](https://www.rabbitmq.com/troubleshooting.html#logging)
+**Shutdown RMQ node:**
+
+```sh
+rabbitmqctl --node rabbitmq-0 shutdown
+rabbitmqctl --node rabbitmq-1 shutdown
+```
+
+**Check RMQ node status:**
+
+```sh
+rabbitmqctl status | grep node
+```
+
+**RMQ health check:**
+
+```sh
+rabbitmqctl node_health_check
+```
+
+**RMQ log level help:**  
+[RabbitMQ Troubleshooting: Logging](https://www.rabbitmq.com/troubleshooting.html#logging)
+
+---
 
 ## Pod Status & Conditions
 
-- **List restarted pods (all namespaces):**
-  kubectl get pods -A | awk '$5 != "0" {print $0}'
+**List restarted pods (all namespaces):**
 
-- **Pod conditions:**
-  kubectl describe pod nginx | grep -i -A6 "Conditions"
+```sh
+kubectl get pods -A | awk '$5 != "0" {print $0}'
+```
 
-- **List pods not running:**
-  kubectl get pods --field-selector=status.phase!=Running --all-namespaces
+**Pod conditions:**
+
+```sh
+kubectl describe pod nginx | grep -i -A6 "Conditions"
+```
+
+**List pods not running:**
+
+```sh
+kubectl get pods --field-selector=status.phase!=Running --all-namespaces
+```
+
+---
 
 ## Helm
 
-- **Uninstall all Helm 3 releases in a namespace:**
-  helm3 ls -n abc --short | xargs -L1 helm uninstall -n rdu
+**Uninstall all Helm 3 releases in a namespace:**
 
-- **Uninstall all Helm 3 releases (all namespaces):**
-  helm3 ls --all-namespaces --short | xargs -L1 helm3 uninstall -n rdu
+```sh
+helm3 ls -n abc --short | xargs -L1 helm uninstall -n rdu
+```
 
-- **Delete broken/pending Helm 2 charts:**
-  helm del $(helm ls --all | grep 'DELETED' | awk '{print $1}') --purge
+**Uninstall all Helm 3 releases (all namespaces):**
 
-## Azure AKS
+```sh
+helm3 ls --all-namespaces --short | xargs -L1 helm3 uninstall -n rdu
+```
 
-- **Get credentials for AKS clusters:**
+**Delete broken/pending Helm 2 charts:**
 
-  **Dev:**
+```sh
+helm del $(helm ls --all | grep 'DELETED' | awk '{print $1}') --purge
+```
 
-  az aks Get-Credentials --subscription ed459897-1dc4-43c5-a753-7be586942a2d -n SITADayLkyDev -g SITADayLkyDev
+---
 
-  **Ops Staging:**
+## Azure Active Directory & ACR
 
-  az aks Get-Credentials --subscription 994744e4-70f2-4b40-8f9b-48ac40563208 -n OperationStaging -g SGS
+**Get Object ID for AD Group:**
 
-  **Sales (fill in values):**
+```sh
+az ad group show --group devaksteam --query objectId -o tsv
+```
 
-  az aks Get-Credentials --subscription \<id\> -n \<name\> -g \<group\>
+**Login to Azure:**
 
-- **Check available k8s versions in Azure:**
+```sh
+az login
+```
 
-  az aks get-versions --location eastus --output table
+**Login to ACR (DEV/PRD):**
 
-## Context Management
+```sh
+# DEV
+TOKEN=$(az acr login --name xscntrlregdev --expose-token --subscription 9c855824-08d7-4a60-aa1d-49f264ef2726 --output tsv --query accessToken)
+echo $TOKEN | docker login xscntrlregdev.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin
 
-- **Get and set kubectl context:**
-  kubectl config get-contexts
-  kubectl config use-context SITADayLkyDev
+# PRD
+az account set --subscription 89dfabd1-917a-4fd4-90eb-623e6e47ebc5
+TOKEN=$(az acr login --name xscntrlregprod --expose-token --subscription 89dfabd1-917a-4fd4-90eb-623e6e47ebc5 --output tsv --query accessToken)
+echo $TOKEN | docker login xscntrlregprod.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin
+```
 
-## API Version Migration
+**Docker login with token:**
 
-- **Update all deployments to current API version:**
-  kubectl get deployment --all-namespaces -o json | kubectl replace -f -
+```sh
+TOKEN_NAME=MyToken
+TOKEN_PWD=your_token_password
+echo $TOKEN_PWD | docker login --username $TOKEN_NAME --password-stdin myregistry.azurecr.io
+```
 
-## Deployment & Scaling
+**Import images to ACR:**
 
-- **Create deployment:**
-  kubectl create deployment --image=nginx nginx
-  kubectl create deployment --image=nginx blue
+```sh
+az acr import --name xscntrlregprod.azurecr.io --source k8s.gcr.io/ingress-nginx/controller:v1.1.1 --image ice-components/ingress-nginx/controller:v1.1.1
+az acr import --name xscntrlregprod.azurecr.io --source ghcr.io/aquasecurity/trivy-db:latest --image ice-components/aquasecurity/tri
+```
 
-- **Scale deployment:**
-  kubectl scale --replicas=3 deployment/blue
+**Skopeo - inspect and copy images:**
+
+```sh
+skopeo inspect docker://docker.io/library/nginx:latest
+skopeo inspect docker://mcr.microsoft.com/dotnet/aspnet:8.0
+skopeo copy docker://docker.io/library/redis:7-alpine docker://myregistry.azurecr.io/redis:7-alpine
+skopeo list-tags docker://docker.io/library/postgres | jq -r '.Tags[]'
+```
+
+**List artifacts in ACR:**
+
+```sh
+az acr login --name xscntrlregprod
+az acr repository list --name xscntrlregprod --output table | grep bor
+az acr repository show-tags --repository bor/sit/itp/ubuntu --name xscntrlregprod
+```
+
+**List file shares:**
+
+```sh
+az storage share list --account-key your_account_key --account-name your_account_name
+```
+
+**List all resources in a group:**
+
+```sh
+az resource list -g Nodes_SGSSandbox --subscription 994744e4-70f2-4b40-8f9b-48ac40563208
+```
+
+**Share files with service principal:**
+
+```sh
+az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId)
+az aks get-credentials --subscription $(subscriptionId) -n SITADayLkyDev -g SITADayLkyDev
+```
+
+**Get volume name from PVC:**
+
+```sh
+volume=$(kubectl -n abc get pvc imageclaim -o=jsonpath='{.spec.volumeName}')
+echo $volume
+shareName="kubernetes-dynamic-$volume"
+```
+
+**Enable Azure File Share backup protection:**
+
+```sh
+az backup protection enable-for-azurefileshare --vault-name azurefilesvault --resource-group azurefiles --policy-name schedule1 --storage-account afsaccount --azure-file-share azurefiles --output table
+az backup protection enable-for-azurefileshare --vault-name RecoveryVaultPREPRD --resource-group IdsMngmtBase --subscription 994744e4-70f2-4b40-8f9b-48ac40563208 --policy-name recovery-vault-policy --storage-account sitasgssandboxzigqb --azure-file-share kubernetes-dynamic-pvc-cdcafed6-1c8d-4c56-b67a-6d21487088eb --output table
+```
+
+**Get AKS credentials (admin):**
+
+```sh
+az aks get-credentials --name aks-hubspoke-eastus2-test-001 --resource-group spoke_core_poc --subscription ee24efef-dd2e-4b04-821b-56c071dcc3cc --admin
+```
+
+---
+
+## Kubernetes RBAC & Authorization
+
+**Approve/Deny CSR:**
+
+```sh
+kubectl certificate approve akshay
+kubectl certificate deny agent-smith
+```
+
+**Check authorization mode:**
+
+```sh
+kubectl describe pod kube-apiserver-controlplane -n kube-system | grep auth
+```
+
+**Check if a user can list pods:**
+
+```sh
+kubectl get pods --as dev-user
+```
+
+**Create a Role and RoleBinding:**
+
+```sh
+kubectl create role developer --namespace=default --verb=list,create,delete --resource=pods
+kubectl create rolebinding dev-user-binding --namespace=default --role=developer --user=dev-user
+```
+
+**Grant dev-user permissions to create deployments in blue namespace:**
+
+```sh
+kubectl create role developer --namespace=blue --verb=create --resource=deployments.apps,deployments.extensions
+kubectl create rolebinding dev-user-binding --namespace=blue --role=developer --user=dev-user
+```
+
+---
 
 ## Node Affinity Example (YAML)
 
